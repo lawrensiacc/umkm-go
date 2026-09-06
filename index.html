@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>UMKM Go</title>
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<style>
+  :root{
+    --paper:#FBF3E1;
+    --paper-dim:#F5E7CE;
+    --card:#FFFDF7;
+    --salmon:#F6C7A3;
+    --salmon-deep:#F0AD79;
+    --rust:#C1501C;
+    --rust-dark:#9C3E13;
+    --ink:#4A2A12;
+    --ink-soft:#8C6B4E;
+    --error:#B33B2E;
+    --error-tint:#F6DAD3;
+    --shadow:0 10px 30px -10px rgba(58,35,23,.25);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Plus Jakarta Sans',system-ui,sans-serif;
+    background:var(--paper-dim);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{ font-weight:800; margin:0; letter-spacing:-.01em; }
+  button{ font-family:inherit; cursor:pointer; border:none; background:none; }
+  input,select,textarea{ font-family:inherit; }
+  a{ color:inherit; text-decoration:none; }
+
+  #shell{
+    max-width:480px; margin:0 auto; min-height:100vh; background:var(--paper);
+    position:relative; padding-bottom:88px;
+  }
+  @media (min-width:760px){
+    #shell{ max-width:920px; margin:20px auto; min-height:calc(100vh - 40px); border-radius:28px; box-shadow:var(--shadow); overflow:hidden; }
+    .bottom-nav{ border-radius:0 0 28px 28px !important; }
+    .grid-2{ display:grid !important; grid-template-columns:repeat(2,1fr); gap:14px; }
+    .grid-3{ display:grid !important; grid-template-columns:repeat(3,1fr); gap:14px; }
+    .peta-tinggi{ height:60vh !important; }
+  }
+
+  .view{ display:none; }
+  .view.active{ display:block; }
+
+  .topbar{ display:flex; align-items:center; justify-content:space-between; padding:16px 18px 4px; }
+  .logo{ display:flex; align-items:baseline; gap:3px; }
+  .logo .u{ font-weight:800; color:var(--rust); font-size:20px; }
+  .logo .go{ font-family:'Pacifico',cursive; color:var(--rust); font-size:22px; transform:rotate(-3deg); display:inline-block; }
+  .avatar-btn{ width:38px;height:38px;border-radius:50%; background:var(--salmon); color:var(--rust-dark); display:flex; align-items:center; justify-content:center; font-size:16px; }
+
+  .px{ padding:0 18px; }
+  .backrow{ display:flex; align-items:center; gap:10px; padding:14px 18px 4px; }
+  .iconbtn{ width:36px;height:36px;border-radius:50%; background:rgba(246,199,163,.7); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+
+  .search-pill{ display:block; width:100%; background:rgba(246,199,163,.5); border-radius:999px; padding:13px 18px; color:var(--ink-soft); font-size:14px; text-align:left; }
+  input.search-pill, input.field-input{ outline:none; border:none; }
+
+  .h2{ font-size:16px; font-weight:800; margin:18px 0 10px; }
+  .h1{ font-size:21px; font-weight:800; }
+
+  .carousel{ position:relative; }
+  .carousel-card{ width:100%; background:var(--salmon); border-radius:16px; min-height:112px; display:flex; flex-direction:column; align-items:flex-start; justify-content:center; padding:16px 20px; text-align:left; }
+  .voucher-badge{ font-size:10px; font-weight:800; background:var(--rust); color:#fff; padding:3px 9px; border-radius:999px; margin-bottom:6px; }
+  .dots{ display:flex; justify-content:center; gap:6px; margin-top:8px; }
+  .dot{ width:6px;height:6px;border-radius:50%; background:var(--salmon); }
+  .dot.on{ background:var(--rust); }
+
+  .peta-preview{ display:block; width:100%; height:130px; border-radius:16px; overflow:hidden; margin-bottom:18px; position:relative; background:var(--salmon); }
+  .cta-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .cta-btn{ background:rgba(246,199,163,.65); border-radius:14px; padding:16px 8px; text-align:center; font-weight:800; font-size:13px; }
+
+  .chiprow{ display:flex; gap:8px; overflow-x:auto; padding-bottom:2px; }
+  .chip{ flex:0 0 auto; padding:9px 15px; border-radius:999px; font-size:12.5px; font-weight:700; background:rgba(246,199,163,.55); color:var(--ink-soft); white-space:nowrap; }
+  .chip.on{ background:var(--rust); color:#fff; }
+
+  .card-row{ display:flex; align-items:center; gap:12px; background:var(--salmon); border-radius:16px; padding:12px; margin-bottom:12px; text-align:left; width:100%; }
+  .thumb{ width:52px;height:52px;border-radius:12px; background:var(--card); flex-shrink:0; }
+  .thumb-lg{ width:100%; height:96px; border-radius:14px; background:var(--card); margin-bottom:8px; }
+  .card-title{ font-weight:800; font-size:14px; }
+  .card-sub{ font-size:12px; color:var(--ink-soft); margin-top:2px; }
+  .card-flex{ flex:1; min-width:0; }
+  .truncate{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  .btn{ display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:13px 18px; border-radius:14px; font-weight:800; font-size:14px; }
+  .btn-rust{ background:var(--rust); color:#fff; }
+  .btn-rust:disabled{ opacity:.55; }
+  .btn-salmon{ background:var(--salmon); color:var(--ink); }
+  .btn-outline{ border:1.6px solid var(--rust); color:var(--rust); background:transparent; }
+  .btn-block{ width:100%; }
+
+  .field{ margin-bottom:13px; }
+  .field label{ display:block; font-size:11.5px; font-weight:800; color:var(--ink-soft); margin-bottom:5px; }
+  .field-input{ width:100%; padding:12px 14px; border-radius:11px; background:rgba(246,199,163,.5); border:1.4px solid transparent; font-size:14px; color:var(--ink); }
+  .field-input:focus{ border-color:var(--salmon-deep); background:var(--card); }
+  textarea.field-input{ resize:vertical; min-height:70px; }
+
+  .hero{ background:var(--rust); height:170px; position:relative; border-radius:0 0 26px 26px; }
+  .hero .iconbtn{ background:rgba(246,199,163,.85); position:absolute; top:14px; }
+  .hero-photo{ position:absolute; left:16px; bottom:-24px; width:104px;height:104px; border-radius:18px; background:#fff; box-shadow:var(--shadow); }
+
+  .prod-row{ display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid rgba(246,199,163,.6); width:100%; text-align:left; }
+  .prod-row:disabled{ opacity:.5; }
+  .badge-diskon{ font-size:10px; background:var(--salmon); padding:2px 7px; border-radius:6px; margin-left:5px; }
+  .badge-habis{ font-size:11px; font-weight:800; color:var(--error); }
+
+  .review-item{ border-bottom:1px solid rgba(246,199,163,.6); padding:11px 0; }
+  .review-top{ display:flex; justify-content:space-between; font-size:13px; font-weight:800; }
+  .stars{ color:var(--rust-dark); }
+
+  .status-pill{ font-size:10px; font-weight:800; padding:4px 9px; border-radius:999px; white-space:nowrap; }
+  .pill-lunas{ background:var(--salmon); color:var(--rust-dark); }
+  .pill-sudah{ background:var(--paper-dim); color:var(--ink-soft); border:1px solid var(--salmon); }
+  .pill-expired{ background:var(--error-tint); color:var(--error); }
+  .pill-menunggu{ background:var(--salmon-deep); color:#fff; }
+
+  .toggle-row{ display:flex; gap:8px; margin-bottom:16px; }
+  .toggle-btn{ padding:9px 16px; border-radius:999px; font-size:12.5px; font-weight:800; background:rgba(246,199,163,.55); color:var(--ink-soft); }
+  .toggle-btn.on{ background:var(--rust); color:#fff; }
+
+  .stat-box{ background:rgba(246,199,163,.55); border-radius:14px; padding:16px; text-align:center; }
+  .stat-n{ font-size:20px; font-weight:800; color:var(--rust-dark); }
+  .stat-l{ font-size:11px; color:var(--ink-soft); margin-top:2px; }
+  .tile-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .tile{ background:var(--salmon); border-radius:16px; padding:28px 8px; text-align:center; font-weight:800; }
+
+  .qr-box{ display:flex; flex-direction:column; align-items:center; padding-top:12px; margin-top:12px; border-top:1px dashed var(--salmon-deep); }
+  .qr-token{ font-size:10px; color:var(--ink-soft); margin-top:8px; word-break:break-all; text-align:center; }
+
+  .overlay{ position:fixed; inset:0; background:rgba(58,35,23,.45); z-index:100; display:none; align-items:flex-end; justify-content:center; }
+  .overlay.active{ display:flex; }
+  .sheet{ width:100%; max-width:480px; background:var(--paper); border-radius:24px 24px 0 0; padding:20px 18px calc(20px + env(safe-area-inset-bottom)); max-height:90vh; overflow-y:auto; animation:up .2s ease-out; }
+  @keyframes up{ from{ transform:translateY(20px); opacity:.4; } to{ transform:translateY(0); opacity:1; } }
+  .sheet-handle{ width:36px;height:4px; border-radius:99px; background:var(--salmon); margin:0 auto 14px; }
+
+  .fullsheet{ position:fixed; inset:0; z-index:110; background:var(--paper); display:none; flex-direction:column; max-width:480px; margin:0 auto; }
+  .fullsheet.active{ display:flex; }
+  @media (min-width:760px){ .fullsheet{ max-width:920px; border-radius:28px; top:20px; bottom:20px; height:calc(100vh - 40px); overflow:hidden; } }
+
+  .empty{ text-align:center; padding:34px 18px; color:var(--ink-soft); font-size:13.5px; }
+  .empty .g{ font-size:28px; display:block; margin-bottom:8px; }
+
+  .bottom-nav{ position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:480px; background:var(--rust-dark); border-radius:20px 20px 0 0; display:flex; z-index:60; }
+  @media (min-width:760px){ .bottom-nav{ max-width:920px; } }
+  .nav-btn{ flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:11px 4px 9px; font-size:10px; font-weight:800; color:rgba(255,255,255,.55); }
+  .nav-btn.on{ color:#fff; }
+  .nav-btn .g{ font-size:18px; }
+
+  .toast-wrap{ position:fixed; top:14px; left:50%; transform:translateX(-50%); z-index:300; width:100%; max-width:440px; padding:0 16px; display:flex; flex-direction:column; gap:8px; pointer-events:none; }
+  .toast{ background:var(--ink); color:#fff; padding:11px 16px; border-radius:12px; font-size:13px; box-shadow:var(--shadow); animation:up .18s ease-out; }
+  .toast.err{ background:var(--error); }
+  .toast.ok{ background:var(--rust-dark); }
+
+  .stepper{ display:flex; align-items:center; justify-content:center; gap:20px; }
+  .stepper button{ width:36px;height:36px;border-radius:11px; background:#fff; font-weight:800; font-size:16px; }
+  .linkline{ font-size:13px; font-weight:800; color:var(--rust); }
+  .loading-full{ padding:60px 18px; text-align:center; color:var(--ink-soft); }
+</style>
+</head>
+<body>
+
+<div id="shell">
+  <div class="topbar">
+    <a href="#" class="logo" onclick="ui.goto('beranda');return false;">
+      <span class="u">UMKM</span><span class="go">go</span><span style="color:var(--rust)">📍</span>
+    </a>
+    <button class="avatar-btn" onclick="ui.goto('akun')">👤</button>
+  </div>
+
+  <!-- BERANDA -->
+  <section class="view" id="v-beranda"></section>
+
+  <!-- PETA -->
+  <section class="view" id="v-peta"></section>
+
+  <!-- JELAJAH -->
+  <section class="view" id="v-jelajah"></section>
+
+  <!-- DETAIL UMKM -->
+  <section class="view" id="v-detail"></section>
+
+  <!-- AKTIVITAS -->
+  <section class="view" id="v-aktivitas"></section>
+
+  <!-- FAVORIT -->
+  <section class="view" id="v-favorit"></section>
+
+  <!-- AKUN -->
+  <section class="view" id="v-akun"></section>
+
+  <!-- DAFTAR KEDAI -->
+  <section class="view" id="v-daftar-kedai"></section>
+
+  <!-- KELOLA MENU -->
+  <section class="view" id="v-kelola-menu"></section>
+
+  <!-- PESANAN MASUK -->
+  <section class="view" id="v-pesanan-masuk"></section>
+
+  <div class="bottom-nav" id="bottom-nav">
+    <button class="nav-btn" data-tab="aktivitas"><span class="g">📋</span>Aktivitas</button>
+    <button class="nav-btn" data-tab="beranda"><span class="g">🏠</span>Beranda</button>
+    <button class="nav-btn" data-tab="favorit"><span class="g">⭐</span>Favorit</button>
+  </div>
+</div>
+
+<!-- Sheet: Beli produk (hero) -->
+<div class="fullsheet" id="fs-beli"></div>
+
+<!-- Sheet kecil: ulasan, onboarding nama, dsb -->
+<div class="overlay" id="ov-kecil"><div class="sheet" id="ov-kecil-body"></div></div>
+
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<script>
+/* =====================================================================
+   UMKM GO — ARTIFACT (backend sungguhan lewat window.storage)
+   - Data marketplace (umkm, produk, pesanan, ulasan) disimpan SHARED
+     -> semua orang yang membuka artifact ini melihat data yang sama.
+   - Profil tiap orang (nama, mode akun, favorit) disimpan PERSONAL
+     -> privat, hanya terlihat oleh masing-masing pengguna.
+   ===================================================================== */
+
+const KEY_DB = 'db';
+const KEY_AKUN = 'akun';
+
+function uid(p){ return (p||'id') + '_' + Math.random().toString(36).slice(2,9) + Date.now().toString(36).slice(-4); }
+function rupiah(n){ return 'Rp' + Math.round(n).toLocaleString('id-ID'); }
+function waktuFmt(iso){
+  const d = new Date(iso);
+  return d.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}) + ' • ' + d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+}
+const KATEGORI_EMOJI = { Kuliner:'🍜', Minuman:'☕', Kerajinan:'🧵', Fashion:'👞', Lainnya:'🛍️' };
+function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function toast(msg, jenis){
+  const wrap = document.getElementById('toast-wrap');
+  const el = document.createElement('div');
+  el.className = 'toast' + (jenis==='err' ? ' err' : jenis==='ok' ? ' ok' : '');
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+
+/* ---------------------- SEED DATA AWAL (hanya dipakai sekali) ---------------------- */
+function dataAwal(){
+  const umkms = [
+    { id:'umkm_1', pemilikId:null, nama:'Warung Rawon Bu Sri', alamat:'Jl. Genteng Kali No. 12, Surabaya', lat:-7.2575, lng:112.7386, kategori:'Kuliner', deskripsi:'Rawon daging sapi resep turun-temurun sejak 1998.', kontak:'081234500001' },
+    { id:'umkm_2', pemilikId:null, nama:'Kedai Kopi Klotok', alamat:'Jl. Raya Darmo No. 45, Surabaya', lat:-7.2919, lng:112.7378, kategori:'Minuman', deskripsi:'Kopi tubruk & susu jahe khas Jawa Timur.', kontak:'081234500002' },
+    { id:'umkm_3', pemilikId:null, nama:'Batik Tulis Sido Mukti', alamat:'Jl. Kembang Jepun No. 78, Surabaya', lat:-7.2331, lng:112.7378, kategori:'Kerajinan', deskripsi:'Kain batik tulis motif pesisir, pewarna alami.', kontak:'081234500003' },
+    { id:'umkm_4', pemilikId:null, nama:'Sepatu Kulit Cak Budi', alamat:'Jl. Dupak No. 21, Surabaya', lat:-7.2450, lng:112.7280, kategori:'Fashion', deskripsi:'Sepatu & sandal kulit asli buatan tangan.', kontak:'081234500004' }
+  ];
+  const products = [
+    { id:'p1', umkmId:'umkm_1', nama:'Rawon Daging Sapi', deskripsi:'Porsi lengkap nasi, tauge, kerupuk.', hargaNormal:22000, diskonPersen:0, stokTersedia:true },
+    { id:'p2', umkmId:'umkm_1', nama:'Rawon + Telur Asin', deskripsi:'Rawon spesial dengan telur asin.', hargaNormal:27000, diskonPersen:15, stokTersedia:true },
+    { id:'p3', umkmId:'umkm_1', nama:'Es Degan', deskripsi:'Kelapa muda segar gula aren.', hargaNormal:10000, diskonPersen:0, stokTersedia:false },
+    { id:'p4', umkmId:'umkm_2', nama:'Kopi Tubruk Klotok', deskripsi:'Kopi robusta lokal.', hargaNormal:12000, diskonPersen:0, stokTersedia:true },
+    { id:'p5', umkmId:'umkm_2', nama:'Susu Jahe Rempah', deskripsi:'Susu hangat jahe & kayu manis.', hargaNormal:15000, diskonPersen:20, stokTersedia:true },
+    { id:'p6', umkmId:'umkm_3', nama:'Kain Batik Pesisir (2m)', deskripsi:'Batik tulis katun primis.', hargaNormal:350000, diskonPersen:10, stokTersedia:true },
+    { id:'p7', umkmId:'umkm_3', nama:'Selendang Batik Tulis', deskripsi:'Selendang warna alami.', hargaNormal:120000, diskonPersen:0, stokTersedia:true },
+    { id:'p8', umkmId:'umkm_4', nama:'Sepatu Pantofel Kulit', deskripsi:'Kulit sapi asli, jahitan tangan.', hargaNormal:275000, diskonPersen:25, stokTersedia:true },
+    { id:'p9', umkmId:'umkm_4', nama:'Sandal Kulit Casual', deskripsi:'Nyaman dipakai harian.', hargaNormal:150000, diskonPersen:0, stokTersedia:true }
+  ];
+  const reviews = [
+    { id:'r1', umkmId:'umkm_1', orderId:null, pembeliId:null, pembeliNama:'Rina', rating:5, teks:'Rawonnya enak banget, kuahnya kental.', waktu:new Date(Date.now()-259200000).toISOString() },
+    { id:'r2', umkmId:'umkm_2', orderId:null, pembeliId:null, pembeliNama:'Dimas', rating:5, teks:'Kopinya juara, harga bersahabat.', waktu:new Date(Date.now()-86400000).toISOString() }
+  ];
+  return { umkms, products, orders:[], reviews };
+}
+
+/* ---------------------- LAPISAN PENYIMPANAN (window.storage) ---------------------- */
+let db = null;
+let akun = null;
+
+async function ambilDB(){
+  try{
+    const res = await window.storage.get(KEY_DB, true);
+    return res ? JSON.parse(res.value) : null;
+  }catch(e){ return null; }
+}
+async function simpanDB(){
+  try{
+    const res = await window.storage.set(KEY_DB, JSON.stringify(db), true);
+    if(!res) toast('Gagal menyimpan ke server. Coba lagi.', 'err');
+  }catch(e){ toast('Gagal menyimpan ke server. Coba lagi.', 'err'); }
+}
+async function ambilAkun(){
+  try{
+    const res = await window.storage.get(KEY_AKUN, false);
+    return res ? JSON.parse(res.value) : null;
+  }catch(e){ return null; }
+}
+async function simpanAkun(){
+  try{ await window.storage.set(KEY_AKUN, JSON.stringify(akun), false); }catch(e){ toast('Gagal menyimpan profil.', 'err'); }
+}
+
+/* ---------------------- HELPER DOMAIN ---------------------- */
+function produkUntuk(umkmId){ return db.products.filter(p => p.umkmId === umkmId); }
+function ulasanUntuk(umkmId){ return db.reviews.filter(r => r.umkmId === umkmId); }
+function ratingUmkm(umkmId){
+  const rs = ulasanUntuk(umkmId);
+  if(!rs.length) return null;
+  return rs.reduce((a,r) => a + r.rating, 0) / rs.length;
+}
+function hargaAkhir(p){ return p.diskonPersen>0 ? Math.round(p.hargaNormal*(100-p.diskonPersen)/100) : p.hargaNormal; }
+function statusPesanan(o){
+  if(o.statusBayar !== 'lunas') return { teks:'Menunggu Pembayaran', kelas:'pill-menunggu' };
+  if(o.statusPakai === 'sudah') return { teks:'Sudah Digunakan', kelas:'pill-sudah' };
+  if(new Date(o.kedaluwarsa).getTime() < Date.now()) return { teks:'Kedaluwarsa', kelas:'pill-expired' };
+  return { teks:'Sudah Dibayar — Belum Digunakan', kelas:'pill-lunas' };
+}
+function voucherAktif(){
+  return db.products.filter(p => p.diskonPersen>0 && p.stokTersedia).map(p => ({...p, umkm: db.umkms.find(u=>u.id===p.umkmId)}));
+}
+
+/* ---------------------- AKSI (menulis ke shared DB) ---------------------- */
+const aksi = {
+  async buatPesanan(umkm, produk, jumlah){
+    if(!produk.stokTersedia) throw new Error('Produk sedang habis.');
+    db = await ambilDB() || db; // ambil versi terbaru sebelum menulis
+    const p = db.products.find(x => x.id === produk.id);
+    const satuan = hargaAkhir(p);
+    const order = {
+      id: uid('order'), token: uid('QR'),
+      pembeliId: akun.id, pembeliNama: akun.nama,
+      umkmId: umkm.id, produkId: p.id, jumlah,
+      hargaSatuan: satuan, totalHarga: satuan*jumlah,
+      statusBayar:'lunas', statusPakai:'belum',
+      waktuBeli:new Date().toISOString(),
+      kedaluwarsa:new Date(Date.now()+86400000).toISOString()
+    };
+    db.orders.unshift(order);
+    await simpanDB();
+    return order;
+  },
+
+  async redeemToken(token, umkmId){
+    db = await ambilDB() || db; // ambil versi terbaru untuk kurangi risiko race condition
+    const order = db.orders.find(o => o.token === token);
+    if(!order) return { ok:false, pesan:'QR Code tidak valid.' };
+    if(order.umkmId !== umkmId) return { ok:false, pesan:'Pesanan ini tidak dapat digunakan di UMKM ini.' };
+    if(order.statusBayar !== 'lunas') return { ok:false, pesan:'Pesanan ini belum dibayar.' };
+    if(new Date(order.kedaluwarsa).getTime() < Date.now()) return { ok:false, pesan:'Pesanan ini sudah kedaluwarsa.' };
+    if(order.statusPakai === 'sudah') return { ok:false, pesan:'Pesanan ini sudah digunakan dan tidak dapat digunakan kembali.' };
+    order.statusPakai = 'sudah';
+    order.waktuDigunakan = new Date().toISOString();
+    await simpanDB();
+    return { ok:true, order };
+  },
+
+  async daftarkanKedai(data){
+    db = await ambilDB() || db;
+    const kedai = { id: uid('umkm'), pemilikId: akun.id, ...data };
+    db.umkms.unshift(kedai);
+    await simpanDB();
+    akun.kedaiId = kedai.id;
+    akun.mode = 'penjual';
+    await simpanAkun();
+    return kedai;
+  },
+
+  async tambahProduk(data){
+    db = await ambilDB() || db;
+    const p = { id: uid('produk'), ...data };
+    db.products.unshift(p);
+    await simpanDB();
+    return p;
+  },
+  async ubahProduk(id, patch){
+    db = await ambilDB() || db;
+    const p = db.products.find(x => x.id === id);
+    if(!p) throw new Error('Produk tidak ditemukan.');
+    Object.assign(p, patch);
+    await simpanDB();
+  },
+  async hapusProduk(id){
+    db = await ambilDB() || db;
+    db.products = db.products.filter(x => x.id !== id);
+    await simpanDB();
+  },
+
+  async tambahUlasan(data){
+    db = await ambilDB() || db;
+    const r = { id: uid('ulasan'), waktu:new Date().toISOString(), pembeliId:akun.id, pembeliNama:akun.nama, ...data };
+    db.reviews.unshift(r);
+    await simpanDB();
+  },
+
+  async toggleFavorit(umkmId){
+    const sudah = akun.favorit.includes(umkmId);
+    akun.favorit = sudah ? akun.favorit.filter(x=>x!==umkmId) : [...akun.favorit, umkmId];
+    await simpanAkun();
+  },
+
+  async gantiMode(){
+    akun.mode = akun.mode === 'pengguna' ? 'penjual' : 'pengguna';
+    await simpanAkun();
+  }
+};
+
+/* =====================================================================
+   UI
+   ===================================================================== */
+const ui = {
+  tab:'beranda',
+  currentUmkmId:null,
+  filterKategori:'Semua',
+  filterTeks:'',
+  aktivitasTab:'pesanan',
+  map:null,
+  mapPeta:null,
+  mapPilih:null,
+  markerPilih:null,
+  html5Qr:null,
+  carouselTimer:null,
+  carouselIdx:0,
+
+  async goto(tab){
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('v-' + tab).classList.add('active');
+    this.tab = tab;
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+    document.getElementById('bottom-nav').style.display = ['beranda','aktivitas','favorit'].includes(tab) ? 'flex' : 'flex';
+    window.scrollTo(0,0);
+
+    if(tab==='beranda') await this.renderBeranda();
+    if(tab==='peta') await this.renderPeta();
+    if(tab==='jelajah') await this.renderJelajah();
+    if(tab==='aktivitas') await this.renderAktivitas();
+    if(tab==='favorit') await this.renderFavorit();
+    if(tab==='akun') await this.renderAkun();
+    if(tab==='daftar-kedai') this.renderDaftarKedai();
+    if(tab==='kelola-menu') await this.renderKelolaMenu();
+    if(tab==='pesanan-masuk') await this.renderPesananMasuk();
+  },
+
+  closeKecil(){ document.getElementById('ov-kecil').classList.remove('active'); },
+  closeBeli(){
+    document.getElementById('fs-beli').classList.remove('active');
+    this.hentikanScan();
+  },
+
+  /* ---------------- ONBOARDING (ganti login/daftar — identitas dari nama saja) ---------------- */
+  onboarding(){
+    return new Promise((resolve) => {
+      document.getElementById('ov-kecil-body').innerHTML = `
+        <div class="sheet-handle"></div>
+        <div style="text-align:center;margin-bottom:16px;">
+          <span class="logo" style="justify-content:center;display:flex;">
+            <span class="u">UMKM</span><span class="go">go</span><span>📍</span>
+          </span>
+        </div>
+        <p style="font-size:13px;color:var(--ink-soft);text-align:center;margin-bottom:16px;">Siapa nama Anda? Nama ini dipakai untuk pesanan dan ulasan Anda.</p>
+        <div class="field"><input class="field-input" id="input-nama-awal" placeholder="Nama Anda"></div>
+        <button class="btn btn-rust btn-block" id="btn-mulai">Mulai Jelajahi UMKM</button>
+      `;
+      document.getElementById('ov-kecil').classList.add('active');
+      document.getElementById('btn-mulai').onclick = async () => {
+        const v = document.getElementById('input-nama-awal').value.trim();
+        if(!v){ toast('Nama tidak boleh kosong.', 'err'); return; }
+        akun = { id: uid('user'), nama: v, mode:'pengguna', kedaiId:null, favorit:[] };
+        await simpanAkun();
+        this.closeKecil();
+        resolve();
+      };
+    });
+  },
+
+  /* ---------------- BERANDA ---------------- */
+  async renderBeranda(){
+    const el = document.getElementById('v-beranda');
+    el.innerHTML = `<div class="loading-full">Memuat...</div>`;
+    db = await ambilDB() || db;
+
+    if(akun.mode === 'penjual' && akun.kedaiId){
+      const kedai = db.umkms.find(u => u.id === akun.kedaiId);
+      if(!kedai){ akun.kedaiId = null; akun.mode = 'pengguna'; await simpanAkun(); return this.renderBeranda(); }
+      const pesanan = db.orders.filter(o => o.umkmId === kedai.id);
+      const totalPendapatan = pesanan.filter(o=>o.statusBayar==='lunas').reduce((a,o)=>a+o.totalHarga,0);
+      el.innerHTML = `
+        <div class="px">
+          <h1 class="h1">${escapeHtml(kedai.nama)}</h1>
+          <p style="font-size:13px;color:var(--ink-soft);margin:2px 0 18px;">Dasbor Penjual</p>
+          <div class="tile-grid" style="margin-bottom:20px;">
+            <a href="#" class="tile" onclick="ui.goto('kelola-menu');return false;">Menu</a>
+            <a href="#" class="tile" onclick="ui.goto('pesanan-masuk');return false;">Pesanan</a>
+          </div>
+          <h2 class="h2">Data Performa Kedai</h2>
+          <div class="grid-2" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="stat-box"><div class="stat-n">${pesanan.length}</div><div class="stat-l">Total Pesanan</div></div>
+            <div class="stat-box"><div class="stat-n" style="font-size:15px;">${rupiah(totalPendapatan)}</div><div class="stat-l">Pendapatan</div></div>
+          </div>
+        </div>`;
+      return;
+    }
+
+    const voucher = voucherAktif();
+    el.innerHTML = `
+      <div class="px">
+        <a href="#" class="search-pill" onclick="ui.goto('jelajah');return false;">Cari UMKM..</a>
+        <h2 class="h2">Jelajahi UMKM yang ada di dekatmu.</h2>
+        <div class="carousel" id="carousel-holder" style="margin-bottom:20px;"></div>
+        <a href="#" onclick="ui.goto('peta');return false;" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <h2 class="h2" style="margin:0;">Cek peta UMKM</h2>
+          <span style="color:var(--rust);font-size:18px;">➔</span>
+        </a>
+        <a href="#" class="peta-preview" onclick="ui.goto('peta');return false;"></a>
+        <div class="cta-grid">
+          <a href="#" class="cta-btn" onclick="ui.goto('aktivitas');ui.aktivitasTab='voucer';return false;">Voucer</a>
+          <a href="#" class="cta-btn" onclick="ui.goto('jelajah');return false;">Lihat UMKM selengkapnya</a>
+        </div>
+      </div>`;
+
+    this.renderCarousel(voucher);
+  },
+
+  renderCarousel(voucher){
+    const holder = document.getElementById('carousel-holder');
+    if(!holder) return;
+    clearInterval(this.carouselTimer);
+    this.carouselIdx = 0;
+
+    const draw = () => {
+      if(voucher.length === 0){
+        holder.innerHTML = `<div class="carousel-card">Jelajahi UMKM yang ada di dekatmu.</div>`;
+        return;
+      }
+      const v = voucher[this.carouselIdx % voucher.length];
+      holder.innerHTML = `
+        <a href="#" class="carousel-card" onclick="ui.bukaDetail('${v.umkmId}');return false;">
+          <span class="voucher-badge">Voucher ${v.diskonPersen}%</span>
+          <b style="font-size:14px;">${escapeHtml(v.nama)}</b>
+          <span style="font-size:12px;color:var(--ink-soft);">${escapeHtml(v.umkm?.nama||'')} • ${rupiah(hargaAkhir(v))}</span>
+        </a>
+        ${voucher.length>1 ? `<div class="dots">${voucher.map((_,i)=>`<span class="dot ${i===this.carouselIdx%voucher.length?'on':''}"></span>`).join('')}</div>` : ''}
+      `;
+    };
+    draw();
+    if(voucher.length > 1){
+      this.carouselTimer = setInterval(() => { this.carouselIdx++; draw(); }, 3500);
+    }
+  },
+
+  /* ---------------- PETA PENUH ---------------- */
+  async renderPeta(){
+    const el = document.getElementById('v-peta');
+    db = await ambilDB() || db;
+    el.innerHTML = `
+      <div class="backrow"><button class="iconbtn" onclick="ui.goto('beranda')">←</button><h1 class="h1">Peta UMKM</h1></div>
+      <div class="px">
+        <div id="peta-full" class="peta-tinggi" style="height:60vh;border-radius:16px;overflow:hidden;border:1px solid var(--salmon);"></div>
+        <p style="font-size:12px;color:var(--ink-soft);text-align:center;margin-top:10px;">Ketuk marker untuk melihat detail UMKM.</p>
+      </div>`;
+    setTimeout(() => {
+      if(this.mapPeta){ this.mapPeta.remove(); this.mapPeta = null; }
+      this.mapPeta = L.map('peta-full', { zoomControl:false }).setView([-7.265,112.735], 12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19}).addTo(this.mapPeta);
+      db.umkms.forEach(u => {
+        const icon = L.divIcon({ html:`<div style="background:var(--rust);width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);">${KATEGORI_EMOJI[u.kategori]||'🛍️'}</div>`, className:'', iconSize:[30,30], iconAnchor:[15,15] });
+        const m = L.marker([u.lat,u.lng], {icon}).addTo(this.mapPeta);
+        m.bindPopup(`<b>${escapeHtml(u.nama)}</b>`);
+        m.on('click', () => setTimeout(()=>this.bukaDetail(u.id), 300));
+      });
+    }, 30);
+  },
+
+  /* ---------------- JELAJAH (list lengkap) ---------------- */
+  async renderJelajah(){
+    const el = document.getElementById('v-jelajah');
+    db = await ambilDB() || db;
+    const kategoriUnik = ['Semua', ...new Set(db.umkms.map(u=>u.kategori))];
+    el.innerHTML = `
+      <div class="backrow"><button class="iconbtn" onclick="ui.goto('beranda')">←</button><h1 class="h1">Jelajahi UMKM</h1></div>
+      <div class="px">
+        <input class="field-input search-pill" id="input-jelajah" placeholder="Cari UMKM.." style="margin-bottom:12px;">
+        <div class="chiprow" id="chip-jelajah" style="margin-bottom:16px;"></div>
+        <div id="list-jelajah" class="grid-2"></div>
+      </div>`;
+
+    const chipHolder = document.getElementById('chip-jelajah');
+    chipHolder.innerHTML = kategoriUnik.map(k => `<button class="chip ${k===this.filterKategori?'on':''}" data-k="${escapeHtml(k)}">${escapeHtml(k)}</button>`).join('');
+    chipHolder.querySelectorAll('.chip').forEach(c => c.onclick = () => { this.filterKategori = c.dataset.k; this.renderJelajah(); });
+
+    const input = document.getElementById('input-jelajah');
+    input.value = this.filterTeks;
+    input.oninput = (e) => { this.filterTeks = e.target.value; this.gambarListJelajah(); };
+    this.gambarListJelajah();
+  },
+
+  gambarListJelajah(){
+    const hasil = db.umkms.filter(u => {
+      const cocokK = this.filterKategori==='Semua' || u.kategori===this.filterKategori;
+      const cocokC = u.nama.toLowerCase().includes(this.filterTeks.toLowerCase());
+      return cocokK && cocokC;
+    });
+    const list = document.getElementById('list-jelajah');
+    if(hasil.length===0){ list.innerHTML = `<div class="empty" style="grid-column:1/-1;"><span class="g">🔍</span>Produk tidak ditemukan.</div>`; return; }
+    list.innerHTML = hasil.map(u => `
+      <button class="card-row" style="flex-direction:column;align-items:flex-start;" onclick="ui.bukaDetail('${u.id}')">
+        <div class="thumb-lg"></div>
+        <div class="card-title truncate" style="width:100%;">${escapeHtml(u.nama)}</div>
+        <div class="card-sub truncate" style="width:100%;">${escapeHtml(u.alamat)}</div>
+      </button>
+    `).join('');
+  },
+
+  /* ---------------- DETAIL UMKM ---------------- */
+  async bukaDetail(id){
+    this.currentUmkmId = id;
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('v-detail').classList.add('active');
+    this.tab = 'detail';
+    window.scrollTo(0,0);
+    db = await ambilDB() || db;
+    this.renderDetail();
+  },
+
+  renderDetail(){
+    const u = db.umkms.find(x => x.id === this.currentUmkmId);
+    const el = document.getElementById('v-detail');
+    if(!u){ el.innerHTML = `<div class="empty">UMKM tidak ditemukan.</div>`; return; }
+    const produk = produkUntuk(u.id);
+    const ulasan = ulasanUntuk(u.id);
+    const r = ratingUmkm(u.id);
+    const isFav = akun.favorit.includes(u.id);
+    const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${u.lat},${u.lng}`;
+
+    el.innerHTML = `
+      <div class="hero">
+        <button class="iconbtn" style="left:16px;" onclick="ui.goto('${this.tabAsal||'beranda'}')">←</button>
+        <button class="iconbtn" style="right:16px;font-size:17px;" id="btn-fav-detail">${isFav?'★':'☆'}</button>
+        <div class="hero-photo" style="display:flex;align-items:center;justify-content:center;font-size:34px;">${KATEGORI_EMOJI[u.kategori]||'🛍️'}</div>
+      </div>
+      <div class="px" style="padding-top:32px;">
+        <h1 class="h1">${escapeHtml(u.nama)}</h1>
+        <p style="font-size:13px;color:var(--ink-soft);margin-top:2px;">${escapeHtml(u.alamat)}</p>
+        <p style="font-size:12.5px;color:var(--ink-soft);margin-top:2px;">${r?`★ ${r.toFixed(1)} dari ${ulasan.length} ulasan`:'Belum ada ulasan'}</p>
+        <a href="${mapsUrl}" target="_blank" class="btn btn-outline" style="margin:12px 0;display:inline-flex;">📍 Lihat Rute</a>
+        <p style="font-size:13.5px;line-height:1.6;">${escapeHtml(u.deskripsi)}</p>
+
+        <h2 class="h2">Menu Restoran</h2>
+        <div>
+          ${produk.length ? produk.map(p => `
+            <button class="prod-row" ${!p.stokTersedia?'disabled':''} onclick='ui.bukaBeli(${JSON.stringify(p.id)})'>
+              <span style="font-weight:800;font-size:13.5px;">${escapeHtml(p.nama)}</span>
+              <span style="font-size:13px;">
+                ${p.stokTersedia ? rupiah(hargaAkhir(p)) + (p.diskonPersen>0?`<span class="badge-diskon">-${p.diskonPersen}%</span>`:'') : '<span class="badge-habis">Stok Habis</span>'}
+              </span>
+            </button>`).join('') : `<p class="empty">Belum ada menu.</p>`}
+        </div>
+
+        <h2 class="h2">Ulasan Pembeli</h2>
+        <div style="margin-bottom:20px;">
+          ${ulasan.length ? ulasan.map(rv => `
+            <div class="review-item">
+              <div class="review-top"><span>${escapeHtml(rv.pembeliNama)}</span><span class="stars">${'★'.repeat(rv.rating)}${'☆'.repeat(5-rv.rating)}</span></div>
+              <p style="font-size:13px;margin:4px 0 0;">${escapeHtml(rv.teks)}</p>
+            </div>`).join('') : `<p class="empty">Belum ada ulasan untuk UMKM ini.</p>`}
+        </div>
+      </div>
+    `;
+    document.getElementById('btn-fav-detail').onclick = async () => {
+      await aksi.toggleFavorit(u.id);
+      this.renderDetail();
+    };
+  },
+
+  /* ---------------- BELI (hero, fullsheet) ---------------- */
+  bukaBeli(produkId){
+    const u = db.umkms.find(x => x.id === this.currentUmkmId);
+    const p = db.products.find(x => x.id === produkId);
+    if(!p.stokTersedia){ toast('Produk sedang habis.', 'err'); return; }
+    let jumlah = 1;
+    let pesanError = '';
+
+    const draw = () => {
+      const el = document.getElementById('fs-beli');
+      el.innerHTML = `
+        <div class="hero" style="border-radius:0 0 24px 24px;flex-shrink:0;">
+          <button class="iconbtn" style="left:16px;" onclick="ui.closeBeli()">←</button>
+          <div style="position:absolute;left:24px;right:24px;top:60px;bottom:20px;background:#fff;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:42px;">${KATEGORI_EMOJI[u.kategori]||'🛍️'}</div>
+        </div>
+        <div class="px" style="flex:1;overflow-y:auto;padding-top:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <h1 class="h1">${escapeHtml(p.nama)}</h1><span style="font-size:18px;">☆</span>
+          </div>
+          <p style="font-size:13.5px;color:var(--ink-soft);margin-top:8px;line-height:1.6;">${escapeHtml(p.deskripsi || 'Tidak ada deskripsi tambahan untuk menu ini.')}</p>
+          <div style="font-weight:800;font-size:17px;margin-top:14px;">Harga: ${rupiah(hargaAkhir(p))}</div>
+          ${p.diskonPersen>0 ? `<div style="font-size:12px;color:var(--ink-soft);text-decoration:line-through;">${rupiah(p.hargaNormal)}</div>` : ''}
+        </div>
+        <div style="background:var(--salmon);padding:16px 18px calc(16px + env(safe-area-inset-bottom));flex-shrink:0;">
+          <div class="stepper" style="margin-bottom:12px;">
+            <button id="btn-min">−</button><span style="font-weight:800;">${jumlah}</span><button id="btn-plus">+</button>
+          </div>
+          ${pesanError ? `<p style="color:var(--error);font-size:12.5px;text-align:center;margin-bottom:8px;">${escapeHtml(pesanError)}</p>` : ''}
+          <button class="btn btn-rust btn-block" id="btn-beli">Beli</button>
+        </div>
+      `;
+      document.getElementById('btn-min').onclick = () => { if(jumlah>1){ jumlah--; draw(); } };
+      document.getElementById('btn-plus').onclick = () => { jumlah++; draw(); };
+      document.getElementById('btn-beli').onclick = async () => {
+        const btn = document.getElementById('btn-beli');
+        btn.disabled = true; btn.textContent = 'Memproses...';
+        try{
+          await aksi.buatPesanan(u, p, jumlah);
+          this.closeBeli();
+          toast('Pesanan berhasil dibuat!', 'ok');
+          this.goto('aktivitas');
+        }catch(e){
+          pesanError = e.message || 'Gagal membuat pesanan.';
+          draw();
+        }
+      };
+    };
+    draw();
+    document.getElementById('fs-beli').classList.add('active');
+  },
+
+  /* ---------------- AKTIVITAS ---------------- */
+  async renderAktivitas(){
+    const el = document.getElementById('v-aktivitas');
+    db = await ambilDB() || db;
+    el.innerHTML = `
+      <div class="px" style="padding-top:16px;">
+        <h1 class="h1" style="margin-bottom:14px;">Aktivitas</h1>
+        <div class="toggle-row">
+          <button class="toggle-btn ${this.aktivitasTab==='pesanan'?'on':''}" id="tab-pesanan">Pesanan</button>
+          <button class="toggle-btn ${this.aktivitasTab==='voucer'?'on':''}" id="tab-voucer">Voucer</button>
+        </div>
+        <div id="isi-aktivitas"></div>
+      </div>`;
+    document.getElementById('tab-pesanan').onclick = () => { this.aktivitasTab='pesanan'; this.renderAktivitas(); };
+    document.getElementById('tab-voucer').onclick = () => { this.aktivitasTab='voucer'; this.renderAktivitas(); };
+
+    const isi = document.getElementById('isi-aktivitas');
+    if(this.aktivitasTab === 'pesanan'){
+      const milik = db.orders.filter(o => o.pembeliId === akun.id);
+      if(!milik.length){ isi.innerHTML = `<div class="empty"><span class="g">📋</span>Belum ada pesanan.</div>`; return; }
+      isi.innerHTML = milik.map(o => {
+        const st = statusPesanan(o);
+        const umkmNama = db.umkms.find(u=>u.id===o.umkmId)?.nama || '-';
+        const produkNama = db.products.find(p=>p.id===o.produkId)?.nama || '-';
+        return `
+        <div class="card-row" style="flex-direction:column;align-items:stretch;">
+          <div style="display:flex;justify-content:space-between;gap:10px;">
+            <div style="min-width:0;"><div class="card-title truncate">${escapeHtml(produkNama)} ×${o.jumlah}</div><div class="card-sub truncate">${escapeHtml(umkmNama)}</div></div>
+            <span class="status-pill ${st.kelas}">${st.teks}</span>
+          </div>
+          <div class="card-sub" style="margin-top:8px;">${rupiah(o.totalHarga)} • ${waktuFmt(o.waktuBeli)}</div>
+          ${st.kelas==='pill-lunas' ? `<div class="qr-box"><div id="qr_${o.id}"></div><div class="qr-token">${o.token}</div></div>` : ''}
+          ${o.statusPakai==='sudah' && !db.reviews.some(r=>r.orderId===o.id) ? `<button class="btn btn-outline" style="margin-top:10px;" data-ulas="${o.id}">Beri Ulasan</button>` : ''}
+        </div>`;
+      }).join('');
+      milik.forEach(o => {
+        const box = document.getElementById('qr_'+o.id);
+        if(box && window.QRCode) new QRCode(box, { text:o.token, width:130, height:130, colorDark:'#4A2A12', colorLight:'#FFFDF7' });
+      });
+      isi.querySelectorAll('[data-ulas]').forEach(b => b.onclick = () => this.bukaUlasan(b.dataset.ulas));
+    } else {
+      const v = voucherAktif();
+      if(!v.length){ isi.innerHTML = `<div class="empty"><span class="g">🏷️</span>Belum ada voucher aktif.</div>`; return; }
+      isi.innerHTML = v.map(item => `
+        <div class="card-row">
+          <div class="thumb"></div>
+          <div class="card-flex">
+            <div class="card-title truncate">${escapeHtml(item.nama)}</div>
+            <div class="card-sub truncate">${escapeHtml(item.umkm?.nama||'')}</div>
+            <div style="font-size:13px;margin-top:3px;">${rupiah(hargaAkhir(item))} <span class="badge-diskon">-${item.diskonPersen}%</span></div>
+          </div>
+        </div>
+      `).join('');
+    }
+  },
+
+  bukaUlasan(orderId){
+    const order = db.orders.find(o => o.id === orderId);
+    const u = db.umkms.find(x => x.id === order.umkmId);
+    let bintang = 5;
+    const draw = () => {
+      document.getElementById('ov-kecil-body').innerHTML = `
+        <div class="sheet-handle"></div>
+        <h2 class="h2" style="margin-top:0;">Beri ulasan untuk ${escapeHtml(u.nama)}</h2>
+        <div style="font-size:26px;letter-spacing:5px;margin-bottom:12px;">
+          ${[1,2,3,4,5].map(n => `<span data-s="${n}" style="cursor:pointer;color:${n<=bintang?'var(--rust-dark)':'var(--salmon)'}">★</span>`).join('')}
+        </div>
+        <div class="field"><textarea class="field-input" id="teks-ulasan" placeholder="Ceritakan pengalaman Anda..."></textarea></div>
+        <button class="btn btn-rust btn-block" id="btn-kirim-ulasan">Kirim Ulasan</button>
+      `;
+      document.querySelectorAll('[data-s]').forEach(s => s.onclick = () => { bintang = parseInt(s.dataset.s); draw(); });
+      document.getElementById('btn-kirim-ulasan').onclick = async () => {
+        const teks = document.getElementById('teks-ulasan').value.trim();
+        if(!teks){ toast('Tulis ulasan terlebih dahulu.', 'err'); return; }
+        await aksi.tambahUlasan({ umkmId:u.id, orderId, rating:bintang, teks });
+        this.closeKecil();
+        toast('Ulasan terkirim. Terima kasih!', 'ok');
+        this.renderAktivitas();
+      };
+    };
+    draw();
+    document.getElementById('ov-kecil').classList.add('active');
+  },
+
+  /* ---------------- FAVORIT ---------------- */
+  async renderFavorit(){
+    const el = document.getElementById('v-favorit');
+    db = await ambilDB() || db;
+    const items = db.umkms.filter(u => akun.favorit.includes(u.id));
+    el.innerHTML = `
+      <div class="px" style="padding-top:16px;">
+        <h1 class="h1" style="margin-bottom:14px;">Favorit</h1>
+        <div class="grid-2" id="grid-favorit" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;"></div>
+      </div>`;
+    const grid = document.getElementById('grid-favorit');
+    if(!items.length){ grid.innerHTML = `<div class="empty" style="grid-column:1/-1;"><span class="g">⭐</span>Belum ada UMKM favorit.</div>`; return; }
+    grid.innerHTML = items.map(u => `
+      <div class="card-row" style="flex-direction:column;align-items:stretch;position:relative;">
+        <button style="text-align:left;" onclick="ui.bukaDetail('${u.id}')">
+          <div class="thumb-lg"></div>
+          <div class="card-title truncate">${escapeHtml(u.nama)}</div>
+        </button>
+        <button style="position:absolute;bottom:12px;right:12px;color:var(--rust);font-size:17px;" data-unfav="${u.id}">★</button>
+      </div>
+    `).join('');
+    grid.querySelectorAll('[data-unfav]').forEach(b => b.onclick = async () => { await aksi.toggleFavorit(b.dataset.unfav); this.renderFavorit(); });
+  },
+
+  /* ---------------- AKUN ---------------- */
+  async renderAkun(){
+    const el = document.getElementById('v-akun');
+    db = await ambilDB() || db;
+    const kedai = akun.kedaiId ? db.umkms.find(u=>u.id===akun.kedaiId) : null;
+    el.innerHTML = `
+      <div class="hero" style="height:120px;display:flex;align-items:center;gap:14px;padding:0 20px;">
+        <div style="width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;">${kedai && akun.mode==='penjual' ? '🏪' : '👤'}</div>
+        <div style="color:#fff;min-width:0;">
+          <div style="font-weight:800;" class="truncate">${kedai && akun.mode==='penjual' ? escapeHtml(kedai.nama) : escapeHtml(akun.nama)}</div>
+          <div style="font-size:12px;opacity:.85;">Akun UMKM Go</div>
+        </div>
+      </div>
+      <div class="px" style="margin-top:16px;">
+        ${kedai
+          ? `<button class="btn btn-salmon btn-block" id="btn-ganti-mode">Ganti Mode Akun</button>`
+          : `<a href="#" class="btn btn-salmon btn-block" onclick="ui.goto('daftar-kedai');return false;">Daftarkan Kedai</a>`}
+        <div style="background:rgba(246,199,163,.5);border-radius:14px;margin-top:14px;overflow:hidden;">
+          <div style="padding:13px 16px;font-size:13.5px;font-weight:700;border-bottom:1px solid rgba(255,255,255,.5);">Ubah Kata Sandi</div>
+          <div style="padding:13px 16px;font-size:13.5px;font-weight:700;border-bottom:1px solid rgba(255,255,255,.5);">Syarat dan Ketentuan</div>
+          <div style="padding:13px 16px;font-size:13.5px;font-weight:700;">Bantuan</div>
+        </div>
+        <button class="btn btn-salmon btn-block" id="btn-ganti-nama" style="margin-top:14px;">Ganti Nama</button>
+      </div>
+    `;
+    const btnGanti = document.getElementById('btn-ganti-mode');
+    if(btnGanti) btnGanti.onclick = async () => { await aksi.gantiMode(); this.goto('beranda'); };
+    document.getElementById('btn-ganti-nama').onclick = () => {
+      document.getElementById('ov-kecil-body').innerHTML = `
+        <div class="sheet-handle"></div>
+        <h2 class="h2" style="margin-top:0;">Ganti Nama</h2>
+        <div class="field"><input class="field-input" id="nama-baru" value="${escapeHtml(akun.nama)}"></div>
+        <button class="btn btn-rust btn-block" id="btn-simpan-nama">Simpan</button>
+      `;
+      document.getElementById('ov-kecil').classList.add('active');
+      document.getElementById('btn-simpan-nama').onclick = async () => {
+        const v = document.getElementById('nama-baru').value.trim();
+        if(!v){ toast('Nama tidak boleh kosong.', 'err'); return; }
+        akun.nama = v;
+        await simpanAkun();
+        this.closeKecil();
+        this.renderAkun();
+      };
+    };
+  },
+
+  /* ---------------- DAFTAR KEDAI ---------------- */
+  renderDaftarKedai(){
+    const el = document.getElementById('v-daftar-kedai');
+    let lokasi = null;
+    el.innerHTML = `
+      <div class="backrow"><button class="iconbtn" onclick="ui.goto('akun')">←</button><h1 class="h1">Daftarkan Kedai</h1></div>
+      <div class="px">
+        <div class="field"><label>Nama Kedai</label><input class="field-input" id="fk-nama"></div>
+        <div class="field"><label>Alamat Kedai</label><input class="field-input" id="fk-alamat"></div>
+        <div class="field"><label>Kategori</label>
+          <select class="field-input" id="fk-kategori">
+            <option>Kuliner</option><option>Minuman</option><option>Kerajinan</option><option>Fashion</option><option>Lainnya</option>
+          </select>
+        </div>
+        <div class="field"><label>Deskripsi</label><textarea class="field-input" id="fk-deskripsi"></textarea></div>
+        <div class="field"><label>Nomor Kontak</label><input class="field-input" id="fk-kontak"></div>
+        <div class="field"><label>Pilih Lokasi pada Peta (ketuk peta)</label>
+          <div id="peta-daftar" style="height:180px;border-radius:12px;overflow:hidden;border:1.4px solid var(--salmon);"></div>
+        </div>
+        <p id="fk-error" style="color:var(--error);font-size:12.5px;display:none;"></p>
+        <button class="btn btn-rust btn-block" id="btn-simpan-kedai">Daftarkan Kedai</button>
+      </div>`;
+
+    setTimeout(() => {
+      const map = L.map('peta-daftar', { zoomControl:false }).setView([-7.265,112.735], 12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19}).addTo(map);
+      let marker = null;
+      map.on('click', (e) => {
+        lokasi = e.latlng;
+        if(marker) map.removeLayer(marker);
+        marker = L.marker(e.latlng).addTo(map);
+      });
+    }, 30);
+
+    document.getElementById('btn-simpan-kedai').onclick = async () => {
+      const nama = document.getElementById('fk-nama').value.trim();
+      const alamat = document.getElementById('fk-alamat').value.trim();
+      const kategori = document.getElementById('fk-kategori').value;
+      const deskripsi = document.getElementById('fk-deskripsi').value.trim();
+      const kontak = document.getElementById('fk-kontak').value.trim();
+      const errEl = document.getElementById('fk-error');
+      if(!nama || !alamat || !kontak){ errEl.textContent='Lengkapi data yang wajib diisi.'; errEl.style.display='block'; return; }
+      if(!lokasi){ errEl.textContent='Pilih lokasi kedai pada peta.'; errEl.style.display='block'; return; }
+      errEl.style.display='none';
+      const btn = document.getElementById('btn-simpan-kedai');
+      btn.disabled = true; btn.textContent = 'Menyimpan...';
+      try{
+        await aksi.daftarkanKedai({ nama, alamat, kategori, deskripsi, kontak, lat:lokasi.lat, lng:lokasi.lng });
+        toast('Kedai berhasil didaftarkan!', 'ok');
+        this.goto('beranda');
+      }catch(e){
+        errEl.textContent = e.message || 'Gagal menyimpan.'; errEl.style.display='block';
+        btn.disabled = false; btn.textContent = 'Daftarkan Kedai';
+      }
+    };
+  },
+
+  /* ---------------- KELOLA MENU ---------------- */
+  async renderKelolaMenu(){
+    const el = document.getElementById('v-kelola-menu');
+    db = await ambilDB() || db;
+    const kedai = db.umkms.find(u => u.id === akun.kedaiId);
+    if(!kedai){ el.innerHTML = `<div class="empty">Anda belum memiliki kedai.</div>`; return; }
+    const produk = produkUntuk(kedai.id);
+    el.innerHTML = `
+      <div class="backrow"><button class="iconbtn" onclick="ui.goto('beranda')">←</button><h1 class="h1">Kelola Menu</h1></div>
+      <div class="px">
+        <button class="btn btn-rust" id="btn-tambah-menu" style="margin-bottom:16px;">+ Tambah Menu</button>
+        <div id="list-menu">
+          ${produk.length ? produk.map(p => `
+            <div class="card-row">
+              <div class="card-flex">
+                <div class="card-title truncate">${escapeHtml(p.nama)}</div>
+                <div class="card-sub">${rupiah(p.hargaNormal)} ${!p.stokTersedia?'• Stok Habis':''}</div>
+              </div>
+              <button class="linkline" data-edit="${p.id}">Ubah</button>
+              <button class="linkline" style="color:var(--error);" data-hapus="${p.id}">Hapus</button>
+            </div>
+          `).join('') : `<div class="empty">Belum ada menu.</div>`}
+        </div>
+      </div>`;
+
+    document.getElementById('btn-tambah-menu').onclick = () => this.bukaFormProduk(kedai.id, null);
+    el.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => this.bukaFormProduk(kedai.id, b.dataset.edit));
+    el.querySelectorAll('[data-hapus]').forEach(b => b.onclick = async () => {
+      if(!confirm('Hapus menu ini?')) return;
+      await aksi.hapusProduk(b.dataset.hapus);
+      this.renderKelolaMenu();
+    });
+  },
+
+  bukaFormProduk(umkmId, produkId){
+    const editMode = !!produkId;
+    const p = editMode ? db.products.find(x => x.id === produkId) : null;
+    document.getElementById('ov-kecil-body').innerHTML = `
+      <div class="sheet-handle"></div>
+      <h2 class="h2" style="margin-top:0;">${editMode?'Ubah Menu':'Tambah Menu'}</h2>
+      <div class="field"><label>Nama menu</label><input class="field-input" id="fp-nama" value="${p?escapeHtml(p.nama):''}"></div>
+      <div class="field"><label>Unggah foto menu</label>
+        <div style="height:80px;border:1.6px dashed var(--salmon-deep);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);font-size:12.5px;">Ketuk untuk unggah foto (opsional)</div>
+      </div>
+      <div class="field"><label>Harga normal (Rp)</label><input class="field-input" type="number" id="fp-harga" value="${p?p.hargaNormal:''}"></div>
+      <div class="field"><label>Voucher / diskon (%) — kosongkan jika tidak ada</label><input class="field-input" type="number" id="fp-diskon" value="${p?p.diskonPersen:0}"></div>
+      <div class="field"><label>Ketersediaan</label>
+        <select class="field-input" id="fp-stok">
+          <option value="true" ${!p||p.stokTersedia?'selected':''}>Tersedia</option>
+          <option value="false" ${p&&!p.stokTersedia?'selected':''}>Stok Habis</option>
+        </select>
+      </div>
+      <button class="btn btn-rust btn-block" id="btn-unggah-menu">Unggah</button>
+    `;
+    document.getElementById('ov-kecil').classList.add('active');
+    document.getElementById('btn-unggah-menu').onclick = async () => {
+      const nama = document.getElementById('fp-nama').value.trim();
+      const harga = parseInt(document.getElementById('fp-harga').value || '0', 10);
+      const diskon = parseInt(document.getElementById('fp-diskon').value || '0', 10);
+      const stok = document.getElementById('fp-stok').value === 'true';
+      if(!nama || !harga){ toast('Nama dan harga wajib diisi.', 'err'); return; }
+      if(editMode){
+        await aksi.ubahProduk(produkId, { nama, hargaNormal:harga, diskonPersen:diskon, stokTersedia:stok });
+      }else{
+        await aksi.tambahProduk({ umkmId, nama, deskripsi:'', hargaNormal:harga, diskonPersen:diskon, stokTersedia:stok });
+      }
+      this.closeKecil();
+      toast(editMode?'Menu diperbarui.':'Menu ditambahkan.', 'ok');
+      this.renderKelolaMenu();
+    };
+  },
+
+  /* ---------------- PESANAN MASUK + PINDAI QR ---------------- */
+  async renderPesananMasuk(){
+    const el = document.getElementById('v-pesanan-masuk');
+    db = await ambilDB() || db;
+    const kedai = db.umkms.find(u => u.id === akun.kedaiId);
+    if(!kedai){ el.innerHTML = `<div class="empty">Anda belum memiliki kedai.</div>`; return; }
+    const pesanan = db.orders.filter(o => o.umkmId === kedai.id);
+
+    el.innerHTML = `
+      <div class="backrow"><button class="iconbtn" onclick="ui.goto('beranda')">←</button><h1 class="h1">Pesanan</h1></div>
+      <div class="px">
+        <button class="btn btn-rust btn-block" id="btn-scan" style="margin-bottom:16px;">📷 Pindai QR Pesanan</button>
+        <div id="area-scan"></div>
+        <div id="hasil-scan"></div>
+        <div style="margin-top:12px;">
+          ${pesanan.length ? pesanan.map(o => {
+            const produkNama = db.products.find(p=>p.id===o.produkId)?.nama || '-';
+            return `
+            <div class="card-row">
+              <div class="thumb"></div>
+              <div class="card-flex">
+                <div class="card-title truncate">${escapeHtml(produkNama)} ×${o.jumlah}</div>
+                <div class="card-sub truncate">${escapeHtml(o.pembeliNama||'-')} • ${new Date(o.waktuBeli).toLocaleDateString('id-ID')}</div>
+              </div>
+              <span style="font-size:12px;font-weight:800;white-space:nowrap;">${o.statusPakai==='sudah'?'Sudah Digunakan':rupiah(o.totalHarga)}</span>
+            </div>`;
+          }).join('') : `<div class="empty">Belum ada pesanan masuk.</div>`}
+        </div>
+      </div>`;
+
+    document.getElementById('btn-scan').onclick = () => this.bukaScan(kedai.id);
+  },
+
+  bukaScan(umkmId){
+    const area = document.getElementById('area-scan');
+    area.innerHTML = `
+      <div id="qr-reader" style="border-radius:12px;overflow:hidden;margin-bottom:10px;min-height:200px;background:rgba(0,0,0,.05);"></div>
+      <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <input class="field-input" id="token-manual" placeholder="Atau masukkan kode pesanan manual" style="flex:1;">
+        <button class="btn btn-rust" id="btn-cek-manual">Cek</button>
+      </div>
+    `;
+    document.getElementById('btn-cek-manual').onclick = () => {
+      const t = document.getElementById('token-manual').value.trim();
+      this.hentikanScan();
+      if(t) this.prosesToken(t, umkmId);
+    };
+    try{
+      this.html5Qr = new Html5Qrcode('qr-reader');
+      this.html5Qr.start(
+        { facingMode:'environment' }, { fps:10, qrbox:220 },
+        (teks) => { this.hentikanScan(); this.prosesToken(teks, umkmId); },
+        () => {}
+      ).catch(() => {
+        document.getElementById('qr-reader').innerHTML = `<div class="empty">Kamera tidak dapat diakses. Gunakan input manual di atas.</div>`;
+      });
+    }catch(e){
+      document.getElementById('qr-reader').innerHTML = `<div class="empty">Kamera tidak didukung. Gunakan input manual di atas.</div>`;
+    }
+  },
+
+  hentikanScan(){
+    if(this.html5Qr){ try{ this.html5Qr.stop().catch(()=>{}); }catch(e){} this.html5Qr = null; }
+  },
+
+  async prosesToken(token, umkmId){
+    const hasilEl = document.getElementById('hasil-scan');
+    hasilEl.innerHTML = `<div class="empty">Memvalidasi pesanan...</div>`;
+    const r = await aksi.redeemToken(token, umkmId);
+    if(!r.ok){
+      hasilEl.innerHTML = `<div style="background:var(--error-tint);color:var(--error);padding:12px;border-radius:12px;font-size:13.5px;">${escapeHtml(r.pesan)}</div>`;
+      return;
+    }
+    const o = r.order;
+    const produkNama = db.products.find(p=>p.id===o.produkId)?.nama || '-';
+    hasilEl.innerHTML = `<div style="background:var(--salmon);padding:12px;border-radius:12px;font-size:13.5px;">
+      <b>${escapeHtml(produkNama)} ×${o.jumlah}</b><br>Pembeli: ${escapeHtml(o.pembeliNama||'-')}<br>
+      Berhasil ditandai <b>Sudah Digunakan</b>.
+    </div>`;
+    toast('Pesanan berhasil digunakan.', 'ok');
+    this.renderPesananMasuk();
+  }
+};
+
+document.querySelectorAll('.nav-btn').forEach(b => b.addEventListener('click', () => ui.goto(b.dataset.tab)));
+
+/* ---------------------- STARTUP ---------------------- */
+(async function mulai(){
+  akun = await ambilAkun();
+  if(!akun){ await ui.onboarding(); }
+
+  db = await ambilDB();
+  if(!db){ db = dataAwal(); await simpanDB(); }
+
+  ui.goto('beranda');
+})();
+</script>
+</body>
+</html>
